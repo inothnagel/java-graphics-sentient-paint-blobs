@@ -8,7 +8,7 @@ import java.util.List;
 import static java.lang.Thread.sleep;
 
 public class SentientPaintBlobs extends JFrame{
-    private final static int MAX_BLOBS = 400;
+    private final static int MAX_BLOBS = 1000;
     private List<Blob> blobs = new ArrayList<>();
     private Canvas canvas= new Canvas();
 

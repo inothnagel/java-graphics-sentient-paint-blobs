@@ -3,6 +3,7 @@ package com.inothnagel.sentientPaintBlobs;
 import java.awt.*;
 
 class Blob {
+    public static final int MAX_SIZE = 20;
     private int x = 40;
     private int y = 40;
     private int xVelocity = 0;
@@ -26,7 +27,7 @@ class Blob {
         this.canvas = canvas;
         this.graphics = canvas.getBufferStrategy().getDrawGraphics();
         this.gravityWeight = Math.random();
-        this.size = (int) (Math.random() * 10);
+        this.size = (int) (Math.random() * MAX_SIZE);
     }
 
     void move() {
