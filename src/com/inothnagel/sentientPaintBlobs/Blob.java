@@ -3,31 +3,36 @@ package com.inothnagel.sentientPaintBlobs;
 import java.awt.*;
 
 class Blob {
-    public static final int MAX_SIZE = 20;
-    private int x = 40;
-    private int y = 40;
-    private int xVelocity = 0;
-    private int yVelocity = 0;
-    private int maxX;
-    private int maxY;
-    private int size;
-    private int yMidpoint;
-    private int xMidpoint;
+    public static final double MAX_SIZE = 200;
+    public static final int GRAVITY_RATIO = 5;
+    private static final boolean PRINT_COORDINATES = true;
+    private double x = 40;
+    private double y = 40;
+    private double xVelocity = 0;
+    private double yVelocity = 0;
+    private double maxPixelWidth;
+    private double maxPixelHeight;
+    private double size;
+    private double yMidpoint;
+    private double xMidpoint;
     private Graphics graphics;
     private Canvas canvas;
     private double gravityWeight;
+    private double rangeX = 10000;
+    private double rangeY = 10000;
 
-    Blob(Canvas canvas, int x, int y, int maxX, int maxY) {
+    Blob(Canvas canvas, double x, double y, int maxPixelWidth, int maxPixelHeight) {
         this.x = x;
         this.y = y;
-        this.maxX = maxX;
-        this.maxY = maxY;
-        this.yMidpoint = maxY / 2;
-        this.xMidpoint = maxX / 2;
+        int maxPixels = Math.max(maxPixelWidth, maxPixelHeight);
+        this.maxPixelWidth = maxPixels;
+        this.maxPixelHeight = maxPixels;
+        this.yMidpoint = maxPixelHeight / 2;
+        this.xMidpoint = maxPixelWidth / 2;
         this.canvas = canvas;
         this.graphics = canvas.getBufferStrategy().getDrawGraphics();
         this.gravityWeight = Math.random();
-        this.size = (int) (Math.random() * MAX_SIZE);
+        this.size = Math.random() * MAX_SIZE;
     }
 
     void move() {
@@ -48,56 +53,98 @@ class Blob {
 
     private void updateMidPoint() {
         if (canvas.getMousePosition() != null) {
-            yMidpoint = (int) canvas.getMousePosition().getY();
-            xMidpoint = (int) canvas.getMousePosition().getX();
+            double mouseX = canvas.getMousePosition().getX();
+            double mouseY = canvas.getMousePosition().getY();
+
+            xMidpoint = rangeX(mouseX);
+            yMidpoint = rangeY(mouseY);
+
+            printCoordinates(mouseX, mouseY);
         }
     }
 
-    private int maxOffset() {
-        return maxY / 2;
+    private void printCoordinates(double mouseX, double mouseY) {
+        if (PRINT_COORDINATES == false) { return; }
+        graphics.setColor(new Color(200,200,200));
+        graphics.drawString("Mouse: " + mouseX + " " + mouseY,20,20);
+        graphics.drawString("Field: " + xMidpoint + " " + yMidpoint,20,40);
     }
 
-    private int offset() {
+    private double rangeX(double mouseX) {
+        return mouseX * pixelWidth();
+    }
+
+    private double rangeY(double mouseY) {
+        return mouseY * pixelHeight();
+    }
+
+    private double maxOffset() {
+        return rangeY / 2;
+    }
+
+    private double getYOffset() {
         return yMidpoint - y;
     }
 
-    private int yGravity() {
-        return (yMidpoint - y) / 2;
+    private double yGravity() {
+        return (yMidpoint - y) / GRAVITY_RATIO;
     }
 
-    private int xGravity() {
-        return (xMidpoint - x) / 2;
+    private double xGravity() {
+        return (xMidpoint - x) / GRAVITY_RATIO;
     }
 
     private void paint() {
-        graphics.fillOval(x, y, size, size);
+        graphics.fillOval(displayX(x), displayY(y), pixelWidth(size), pixelHeight(size));
     }
 
-    private int getYOffset() {
-        int yOffset = Math.abs(offset()) * 250 / Math.abs(maxOffset());
-        yOffset = constrain(yOffset, 0, 250);
-        return yOffset;
+    private double pixelHeight() {
+        return rangeY / maxPixelHeight;
     }
 
-    private int constrain(int val, int min, int max) {
+    private double pixelWidth() {
+        return rangeX / maxPixelWidth;
+    }
+
+    private int pixelWidth(double rangeWidth) {
+        return (int) (rangeWidth / pixelWidth());
+    }
+
+    private int pixelHeight(double rangeHeight) {
+        return (int) (rangeHeight / pixelHeight());
+    }
+
+    private int displayY(double y) {
+        return (int) Math.round(y / pixelHeight());
+//        return (int) Math.round(y);
+    }
+
+    private int displayX(double x) {
+        return (int) Math.round(x / pixelWidth());
+//        return (int) Math.round(x);
+    }
+
+    private double getYOffsetPercentage() {
+        return Math.min(1, Math.abs(getYOffset() / maxOffset()));
+    }
+
+    private double constrain(double val, double min, double max) {
         val = Math.min(max, val);
         val = Math.max(min, val);
         return val;
     }
 
-    private int getXOffset() {
-        int xOffset = x * 250 / maxX;
-        xOffset = constrain(xOffset, 0, 250);
-        return xOffset;
+    private double getXOffsetPercentage() {
+        return Math.min(1, Math.abs(x / rangeX));
     }
 
     private Color getColor() {
-        int yOffset = getYOffset();
-        int xOffset = getXOffset();
+        double xOffset = getXOffsetPercentage();
+        double yOffset = getYOffsetPercentage();
 
-        int red = Math.min(250, xOffset + yOffset);
-        int green = Math.min(250, yOffset);
-        int blue = Math.min(250, 250 - xOffset + yOffset);
+        int red = (int) (xOffset * 250);
+        int green = (int) (yOffset * 250);
+        int blue = (int) (250 - (xOffset * 250));
 
         return new Color(red, green, blue);
     }
